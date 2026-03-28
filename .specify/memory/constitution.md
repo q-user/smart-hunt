@@ -1,50 +1,29 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+# Django Jobs Constitution
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. Architecture & Code Quality
+- **Clean Architecture**: MUST maintain clear separation between Domain, Application (Use Cases), and Infrastructure layers.
+- **Ruff Enforcement**: MUST use `ruff` for linting and formatting; all code MUST pass `ruff check` and `ruff format` without errors.
+- **Type Safety**: MUST use type hints for all public function signatures and class attributes.
+- **DRY & SOLID**: MUST adhere to DRY principles and SOLID design patterns to ensure maintainability.
+- **Explicit Error Handling**: MUST handle exceptions explicitly and log them with context; never fail silently.
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+### II. Testing Standards
+- **Coverage**: Aim for 80%+ code coverage for business logic and core infrastructure.
+- **TDD Preferred**: Write tests alongside implementation.
+- **Unit & Integration**: MUST include unit tests for domain logic and integration tests views/API endpoints.
+- **Isolation**: MUST mock external dependencies (external APIs, file system) in unit tests.
+- **pytest**: MUST use `pytest` as the test runner.
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+### III. Technology Stack
+- **Framework**: FastAPI (latest stable).
+- **Database**: PostgreSQL.
+- **Containerization**: Docker & Docker Compose for development and deployment.
+- **Package Management**: `poetry` for dependency management.
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+## Development Workflow
+1. **Spec-Kit**: MUST follow the `Spec -> Plan -> Tasks` workflow for any non-trivial change.
+2. **Quality Gates**: `ruff check`, `ruff format`, and `pytest` MUST pass before implementation is considered complete.
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
-
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
-
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
-
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
-
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
-
-## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
-
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
-
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+**Version**: 1.1.0 | **Ratified**: 2026-03-27 | **Last Amended**: 2026-03-27
