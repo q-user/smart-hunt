@@ -11,6 +11,7 @@ dependencies = [
     "httpx>=0.28.1",
     "psycopg2-binary>=2.9.11",
     "pydantic>=2.12.5",
+    "pydantic-settings>=2.13.1",
     "redis>=7.4.0",
     "uvicorn[standard]>=0.42.0",
 ]
@@ -18,11 +19,17 @@ dependencies = [
 [dependency-groups]
 main = []
 dev = [
+    "pre-commit>=4.5.1",
     "pytest>=9.0.2",
     "ruff>=0.15.8",
+    "ty>=0.0.26",
 ]
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]
 testpaths = ["tests"]
 asyncio_mode = "auto"
+
+[tool.ruff]
+# Указываем ruff, что корни исходников в src
+src = ["src"]
