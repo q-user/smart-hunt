@@ -47,8 +47,9 @@ jobs:
       - name: Create deployment archive
         # Упаковываем всё, кроме папок .git и .github, чтобы сэкономить место
         run: |
-          tar -czf release.tar.gz \
-            --exclude=release.tar.gz \
+          mkdir -p build_output
+          tar -czf build_output/release.tar.gz \
+            --exclude=build_output \
             --exclude=.git \
             --exclude=.github \
             --exclude=.venv \
