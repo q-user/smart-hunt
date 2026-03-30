@@ -80,18 +80,9 @@ jobs:
           key: ${{ secrets.SERVER_KEY }}
           script: |-
             cd /opt/smart-hunt
-
-            # Распаковываем архив с заменой старых файлов
             tar -xzf release.tar.gz
-
-            # Удаляем архив, чтобы не занимал драгоценное место на 5GB SSD
             rm release.tar.gz
-
-            # Пересобираем образы и перезапускаем контейнеры
             docker-compose up -d --build
-
             # Применяем миграции БД (раскомментируете, когда добавим Alembic)
             # docker-compose exec -T api alembic upgrade head
-
-            # Очищаем старые "висячие" образы Docker (освобождаем SSD)
             docker image prune -af
