@@ -48,6 +48,7 @@ jobs:
         # Упаковываем всё, кроме папок .git и .github, чтобы сэкономить место
         run: |
           tar -czf release.tar.gz \
+            --exclude=release.tar.gz \
             --exclude=.git \
             --exclude=.github \
             --exclude=.venv \
