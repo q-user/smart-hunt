@@ -36,3 +36,59 @@ jobs:
           DATABASE_URL: postgresql+asyncpg://postgres:postgrespassword@localhost:5432/smarthunt_test_db
           REDIS_URL: redis://localhost:6379/0
         run: uv run pytest
+  deploy:
+    name: Deploy to VPS via Archive
+    needs: test-and-lint
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Create deployment archive
+        # Упаковываем всё, кроме папок .git и .github, чтобы сэкономить место
+        run: |
+          tar -czf release.tar.gz \
+            --exclude=.git \
+            --exclude=.github \
+            --exclude=.venv \
+            --exclude=.idea \
+            --exclude=.gemini \
+            --exclude=.qwen \
+            --exclude=.specify \
+            --exclude=__pycache__ \
+            --exclude=.mypy_cache \
+            --exclude=.pytest_cache \
+            --exclude=.ruff_cache \
+            .
+          ls -lh release.tar.gz
+      - name: Copy archive to VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          source: "release.tar.gz"
+          target: "/opt/smart-hunt" # Папка на сервере (убедитесь, что она существует)
+      - name: Extract and Restart Services
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          script: |-
+            cd /opt/smart-hunt
+
+            # Распаковываем архив с заменой старых файлов
+            tar -xzf release.tar.gz
+
+            # Удаляем архив, чтобы не занимал драгоценное место на 5GB SSD
+            rm release.tar.gz
+
+            # Пересобираем образы и перезапускаем контейнеры
+            docker-compose up -d --build
+
+            # Применяем миграции БД (раскомментируете, когда добавим Alembic)
+            # docker-compose exec -T api alembic upgrade head
+
+            # Очищаем старые "висячие" образы Docker (освобождаем SSD)
+            docker image prune -af
