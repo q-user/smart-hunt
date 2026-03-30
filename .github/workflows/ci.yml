@@ -62,7 +62,7 @@ jobs:
             --exclude=.pytest_cache \
             --exclude=.ruff_cache \
             .
-          ls -lh release.tar.gz
+          ls -lh build_output/release.tar.gz
       - name: Copy archive to VPS
         uses: appleboy/scp-action@v0.1.7
         with:
