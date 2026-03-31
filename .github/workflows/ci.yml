@@ -52,20 +52,21 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      # Добавляем шаг для приведения названия репозитория к нижнему регистру
+      - name: Lowercase repo name
+        run: echo "REPO_LOWER=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
-          # Используем перевод в нижний регистр для названия репозитория
-          tags: ghcr.io/${{ github.repository_owner }}/smart-hunt-api:latest
+          tags: ghcr.io/${{ env.REPO_LOWER }}:latest
   deploy:
     needs: build-and-push
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      # Копируем docker-compose.yml на сервер, так как мы удалили шаг с архивом
+      # На сервере уже должна быть папка /opt/smart-hunt с нужными правами
       - name: Copy docker-compose
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -81,24 +82,26 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_KEY }}
           script: |
-            export PATH=$PATH:$HOME/.local/bin
             cd /opt/smart-hunt
 
-            # 1. Clean up the PREVIOUS deployment to free space for the NEW one
-            # This is mandatory for a 5GB disk
-            podman-compose down || true
-            podman system prune -af --volumes || true
+            # 1. Логин (теперь через docker)
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-            # 2. Login to GHCR
-            export OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
-            echo "${{ secrets.GITHUB_TOKEN }}" | podman login ghcr.io -u ${{ github.actor }} --password-stdin
+            # 2. Подготовка переменных
+            export REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+            export IMAGE_NAME="ghcr.io/${REPO_LOWER}:latest"
 
-            # 3. Pull and Start (Clean and simple)
-            export IMAGE_NAME="ghcr.io/${OWNER}/smart-hunt-api:latest"
+            # 3. Обновление образов
+            docker compose pull
 
-            IMAGE_NAME=$IMAGE_NAME podman-compose pull
-            IMAGE_NAME=$IMAGE_NAME podman-compose up -d
+            # 4. Очистка ВСЕГО лишнего перед перезапуском (освобождаем место под новые слои)
+            # Удалит старые слои, которые больше не используются новым образом
+            docker compose down || true
+            docker system prune -af --volumes || true
 
-            # 4. Final verification
-            podman ps
+            # 5. Запуск
+            IMAGE_NAME=$IMAGE_NAME docker compose up -d
+
+            # 6. Проверка
+            docker ps
             df -h /
