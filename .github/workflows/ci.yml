@@ -82,20 +82,28 @@ jobs:
           script: |
             cd /opt/smart-hunt
 
+            # Verify the file actually arrived
+            if [ ! -f "release.tar.gz" ]; then
+              echo "ERROR: release.tar.gz not found in $(pwd)"
+              ls -la
+              exit 1
+            fi
+
             # 1. Stop existing containers
             podman-compose down || true
 
-            # 2. Clean directory (keeps only the archive and secrets)
-            # Find all files except the tar and .env, then remove them
-            find . -maxdepth 1 ! -name 'release.tar.gz' ! -name '.env' ! -name '.' -exec rm -rf {} +
+            # 2. Clean everything EXCEPT our new archive and the .env file
+            # We use -mindepth 1 to avoid matching '.' (the current directory itself)
+            find . -mindepth 1 -maxdepth 1 ! -name 'release.tar.gz' ! -name '.env' -exec rm -rf {} +
 
-            # 3. Extract fresh code
+            # 3. Extract and Cleanup Archive
             tar -xzf release.tar.gz
             rm release.tar.gz
 
-            # 4. Rebuild and Start
+            # 4. Rebuild and Start (using Podman)
+            # Ensure uv is used inside your Dockerfile as discussed
             podman-compose up -d --build
 
-            # 5. SSD Housekeeping (Essential for 5GB)
+            # 5. Housekeeping for 5GB SSD
             podman image prune -af
             podman volume prune -f
