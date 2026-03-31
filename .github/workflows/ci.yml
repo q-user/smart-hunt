@@ -67,6 +67,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       # На сервере уже должна быть папка /opt/smart-hunt с нужными правами
+      - name: Debug files
+        run: |
+          pwd
+          ls -lh docker-compose.yml
       - name: Copy docker-compose
         uses: appleboy/scp-action@v0.1.7
         with:
