@@ -1,6 +1,5 @@
 services:
   db:
-    # Самая свежая версия из вашего скриншота
     image: docker.io/library/postgres:18-alpine
     container_name: hunt_db
     restart: always
@@ -20,7 +19,6 @@ services:
         limits:
           memory: 256M
   redis:
-    # Соответствующая свежая версия Redis
     image: docker.io/library/redis:8-alpine
     container_name: hunt_redis
     restart: always
@@ -34,8 +32,7 @@ services:
         limits:
           memory: 64M
   api:
-    # Образ из GitHub Container Registry (сборка Python 3.14)
-    image: ghcr.io/${GITHUB_REPOSITORY_OWNER}/smart-hunt-api:latest
+    image: ${IMAGE_NAME}
     container_name: hunt_api
     restart: always
     command: uvicorn presentation.api.main:app --host 0.0.0.0 --port 8000
@@ -57,8 +54,7 @@ services:
         limits:
           memory: 300M
   celery_worker:
-    # ПЕРЕИСПОЛЬЗУЕМ тот же образ API (экономим место на SSD!)
-    image: ghcr.io/${GITHUB_REPOSITORY_OWNER}/smart-hunt-api:latest
+    image: ${IMAGE_NAME}
     container_name: hunt_worker
     restart: always
     command: celery -A infrastructure.task_queue.celery_app worker -l info --concurrency=1
