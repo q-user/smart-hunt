@@ -1,35 +1,44 @@
 services:
   db:
-    image: postgres:18-alpine
+    # Самая свежая версия из вашего скриншота
+    image: docker.io/library/postgres:18-alpine
+    container_name: hunt_db
+    restart: always
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgrespassword
       POSTGRES_DB: smarthunt_db
     volumes:
       - db-data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
-    restart: unless-stopped
     logging:
       driver: "json-file"
       options:
-        max-size: "10m"
-        max-file: "3"
+        max-size: "5m"
+        max-file: "2"
+    deploy:
+      resources:
+        limits:
+          memory: 256M
   redis:
-    image: redis:8-alpine
-    ports:
-      - "6379:6379"
-    restart: unless-stopped
+    # Соответствующая свежая версия Redis
+    image: docker.io/library/redis:8-alpine
+    container_name: hunt_redis
+    restart: always
     logging:
       driver: "json-file"
       options:
-        max-size: "10m"
-        max-file: "3"
+        max-size: "2m"
+        max-file: "2"
+    deploy:
+      resources:
+        limits:
+          memory: 64M
   api:
-    build: .
-    command: sh -c "uvicorn presentation.api.main:app --host 0.0.0.0 --port 8000 --reload"
-    volumes:
-      - .:/app
+    # Образ из GitHub Container Registry (сборка Python 3.14)
+    image: ghcr.io/${GITHUB_REPOSITORY_OWNER}/smart-hunt-api:latest
+    container_name: hunt_api
+    restart: always
+    command: uvicorn presentation.api.main:app --host 0.0.0.0 --port 8000
     ports:
       - "8000:8000"
     depends_on:
@@ -41,14 +50,18 @@ services:
     logging:
       driver: "json-file"
       options:
-        max-size: "10m"
-        max-file: "3"
+        max-size: "5m"
+        max-file: "2"
+    deploy:
+      resources:
+        limits:
+          memory: 300M
   celery_worker:
-    build: .
-    # Ограничиваем concurrency до 1 из-за 1 vCPU и малого объема RAM
-    command: celery -A infrastructure.task_queue.celery_app worker -l info --concurrency=1 --max-tasks-per-child=50
-    volumes:
-      - .:/app
+    # ПЕРЕИСПОЛЬЗУЕМ тот же образ API (экономим место на SSD!)
+    image: ghcr.io/${GITHUB_REPOSITORY_OWNER}/smart-hunt-api:latest
+    container_name: hunt_worker
+    restart: always
+    command: celery -A infrastructure.task_queue.celery_app worker -l info --concurrency=1
     depends_on:
       - db
       - redis
@@ -58,7 +71,11 @@ services:
     logging:
       driver: "json-file"
       options:
-        max-size: "10m"
-        max-file: "3"
+        max-size: "5m"
+        max-file: "2"
+    deploy:
+      resources:
+        limits:
+          memory: 256M
 volumes:
   db-data:

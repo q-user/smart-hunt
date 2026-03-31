@@ -1,9 +1,13 @@
-name: CI
+name: CI/CD Smart Hunt
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
+# Разрешаем пуш в GitHub Container Registry
+permissions:
+  contents: read
+  packages: write
 jobs:
   test-and-lint:
     runs-on: ubuntu-latest
@@ -24,7 +28,7 @@ jobs:
         uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true
-          python-version: "3.14"
+          python-version: "3.13" # 3.13 стабильнее для тестов чем 3.14-alpha
       - name: Install dependencies
         run: uv sync --frozen --all-groups
       - name: Lint
@@ -36,58 +40,58 @@ jobs:
           DATABASE_URL: postgresql+asyncpg://postgres:postgrespassword@localhost:5432/smarthunt_test_db
           REDIS_URL: redis://localhost:6379/0
         run: uv run pytest
-  deploy:
-    name: Deploy to VPS via Archive
+  build-and-push:
     needs: test-and-lint
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      - name: Create deployment archive
-        run: |
-          mkdir -p build_output
-          tar -czf build_output/release.tar.gz \
-            --exclude=build_output \
-            --exclude=.git \
-            --exclude=.github \
-            --exclude=.venv \
-            --exclude=.idea \
-            --exclude=.gemini \
-            --exclude=.qwen \
-            --exclude=.specify \
-            --exclude=__pycache__ \
-            --exclude=.mypy_cache \
-            --exclude=.pytest_cache \
-            --exclude=.ruff_cache \
-            --exclude=tests \
-            --exclude=LICENSE \
-            --exclude=docker-compose.dev.yml \
-            .
-          ls -lh build_output/release.tar.gz
-      - name: Copy file via SCP
+      - uses: actions/checkout@v4
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          # Используем перевод в нижний регистр для названия репозитория
+          tags: ghcr.io/${{ github.repository_owner }}/smart-hunt-api:latest
+  deploy:
+    needs: build-and-push
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # Копируем docker-compose.yml на сервер, так как мы удалили шаг с архивом
+      - name: Copy docker-compose
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_KEY }}
-          port: 22
-          source: "build_output/release.tar.gz"
+          source: "docker-compose.yml"
           target: "/opt/smart-hunt"
-          strip_components: 1 # Убирает 'build_output/' из пути на сервере
-      - name: Extract and Restart Services
+      - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_KEY }}
           script: |
+            # 1. Настройка окружения
+            export PATH=$PATH:$HOME/.local/bin
             cd /opt/smart-hunt
 
-            podman-compose down || true
-            podman system prune -af --volumes # Clear old images/cache to make room for the new build
-            find . -mindepth 1 -maxdepth 1 ! -name 'release.tar.gz' ! -name '.env' -exec rm -rf {} +
-            tar -xzf release.tar.gz
-            rm release.tar.gz
-            podman-compose --podman-args "--cgroup-manager cgroupfs" up -d --build
-            df -h /
+            # 2. Логин в реестр (токен маскируется в логах)
+            echo "${{ secrets.GITHUB_TOKEN }}" | podman login ghcr.io -u ${{ github.actor }} --password-stdin
+
+            # 3. Обновление и запуск
+            # Теперь сервер НЕ собирает образ, а просто скачивает готовый (экономия места!)
+            podman-compose pull
+            podman-compose --podman-args "--cgroup-manager cgroupfs" up -d
+
+            # 4. Чистка старых слоев (Критично для 5ГБ SSD)
+            podman image prune -af
