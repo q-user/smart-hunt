@@ -84,21 +84,21 @@ jobs:
             export PATH=$PATH:$HOME/.local/bin
             cd /opt/smart-hunt
 
-            # 1. Формируем имя пользователя в нижнем регистре (обязательно для GHCR)
-            export OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
-            export IMAGE_NAME="ghcr.io/${OWNER}/smart-hunt-api:latest"
+            # 1. Clean up the PREVIOUS deployment to free space for the NEW one
+            # This is mandatory for a 5GB disk
+            podman-compose down || true
+            podman system prune -af --volumes || true
 
-            # 2. Логин
+            # 2. Login to GHCR
+            export OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
             echo "${{ secrets.GITHUB_TOKEN }}" | podman login ghcr.io -u ${{ github.actor }} --password-stdin
 
-            # 3. Исправление ошибки сети (создаем сеть вручную с нужным менеджером)
-            podman network exists smart-hunt_default || \
-            podman network create --cgroup-manager cgroupfs smart-hunt_default
+            # 3. Pull and Start (Clean and simple)
+            export IMAGE_NAME="ghcr.io/${OWNER}/smart-hunt-api:latest"
 
-            # 4. Запуск с явным указанием имени образа
-            # Передаем IMAGE_NAME напрямую в среду выполнения podman-compose
-            IMAGE_NAME=${IMAGE_NAME} podman-compose pull
-            IMAGE_NAME=${IMAGE_NAME} podman-compose --podman-args "--cgroup-manager cgroupfs" up -d
+            IMAGE_NAME=$IMAGE_NAME podman-compose pull
+            IMAGE_NAME=$IMAGE_NAME podman-compose up -d
 
-            # 5. Очистка
-            podman image prune -af
+            # 4. Final verification
+            podman ps
+            df -h /
