@@ -45,7 +45,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Create deployment archive
-        # Упаковываем всё, кроме папок .git и .github, чтобы сэкономить место
         run: |
           mkdir -p build_output
           tar -czf build_output/release.tar.gz \
@@ -61,6 +60,9 @@ jobs:
             --exclude=.mypy_cache \
             --exclude=.pytest_cache \
             --exclude=.ruff_cache \
+            --exclude=tests \
+            --exclude=LICENSE \
+            --exclude=docker-compose.dev.yml \
             .
           ls -lh build_output/release.tar.gz
       - name: Copy file via SCP
