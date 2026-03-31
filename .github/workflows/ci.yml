@@ -92,6 +92,7 @@ jobs:
             export IMAGE_NAME="ghcr.io/${REPO_LOWER}:latest"
 
             # 3. Обновление образов
+            docker builder prune -f
             docker compose pull
 
             # 4. Очистка ВСЕГО лишнего перед перезапуском (освобождаем место под новые слои)
