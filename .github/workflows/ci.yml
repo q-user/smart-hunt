@@ -28,7 +28,7 @@ jobs:
         uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true
-          python-version: "3.13" # 3.13 стабильнее для тестов чем 3.14-alpha
+          python-version: "3.14"
       - name: Install dependencies
         run: uv sync --frozen --all-groups
       - name: Lint
