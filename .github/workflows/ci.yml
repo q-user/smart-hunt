@@ -81,12 +81,21 @@ jobs:
           key: ${{ secrets.SERVER_KEY }}
           script: |-
             cd /opt/smart-hunt
+
+            # 1. Stop existing containers
+            podman-compose down || true
+
+            # 2. Clean directory (keeps only the archive and secrets)
+            # Find all files except the tar and .env, then remove them
+            find . -maxdepth 1 ! -name 'release.tar.gz' ! -name '.env' ! -name '.' -exec rm -rf {} +
+
+            # 3. Extract fresh code
             tar -xzf release.tar.gz
             rm release.tar.gz
 
-            # Use podman-compose (installed via uv)
-            podman-compose down || true
+            # 4. Rebuild and Start
             podman-compose up -d --build
 
-            # CRITICAL: Keep that 5GB SSD clean
+            # 5. SSD Housekeeping (Essential for 5GB)
             podman image prune -af
+            podman volume prune -f
