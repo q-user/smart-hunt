@@ -1,29 +1,24 @@
-# Dockerfile
-FROM python:3.14-slim AS builder
+FROM docker.io/library/python:3.13-slim # Use 3.13 (Stable) instead of 3.14 (Alpha)
 
-ENV UV_SYSTEM_PYTHON=1 \
-    UV_COMPILE_BYTECODE=1
-
-# Установка uv
+# Install uv
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
+ENV UV_SYSTEM_PYTHON=1 \
+    UV_COMPILE_BYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
 WORKDIR /app
+
+# Copy dependency files first (better caching)
 COPY pyproject.toml uv.lock ./
 
-# Установка зависимостей в системный Python (для slim образа это ок)
-RUN uv pip install -r pyproject.toml
+# Install dependencies (no-cache saves 100MB+ of SSD space!)
+RUN uv pip install --no-cache -r pyproject.toml
 
-# --- Финальный образ ---
-FROM python:3.14-slim
-
-WORKDIR /app
-# Копируем только установленные пакеты из билдера
-COPY --from=builder /usr/local/lib/python3.14/site-packages /usr/local/lib/python3.14/site-packages
-COPY --from=builder /usr/local/bin /usr/local/bin
-
+# Copy source code
 COPY . .
 
-# Ограничение логов и ресурсов внутри приложения
+# Security and clean up
 RUN useradd -m appuser && chown -R appuser /app
 USER appuser
 
