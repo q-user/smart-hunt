@@ -32,6 +32,11 @@ pythonpath = ["src"]
 testpaths = ["tests"]
 asyncio_mode = "auto"
 
+[tool.mypy]
+python_version = "3.14"
+mypy_path = "src"
+explicit_package_bases = true
+
 [tool.ruff]
 # Указываем ruff, что корни исходников в src
 src = ["src"]

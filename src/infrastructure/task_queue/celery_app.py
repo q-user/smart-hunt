@@ -1,5 +1,5 @@
 from celery import Celery
-from src.infrastructure.config import settings
+from infrastructure.config import settings
 
 celery_app = Celery(
     "worker",
