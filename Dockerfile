@@ -28,4 +28,4 @@ USER appuser
 
 # Проверьте путь: если ваш main.py лежит в src/presentation/api/,
 # то команда запуска должна выглядеть так:
-CMD ["uvicorn", "presentation.api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "src.presentation.api.main:app", "--host", "0.0.0.0", "--port", "8000"]
