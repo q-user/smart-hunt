@@ -7,6 +7,11 @@ services:
       - .env
     volumes:
       - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d smarthunt_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     logging:
       driver: "json-file"
       options:
@@ -37,10 +42,10 @@ services:
     ports:
       - "8000:8000"
     depends_on:
-      - db
-      - redis
-    env_file:
-      - .env
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
     logging:
       driver: "json-file"
       options:
@@ -49,15 +54,17 @@ services:
     deploy:
       resources:
         limits:
-          memory: 300M
+          memory: 256M
   celery_worker:
     image: ghcr.io/q-user/smart-hunt:latest
     container_name: hunt_worker
     restart: always
-    command: celery -A infrastructure.task_queue.celery_app worker -l info --concurrency=1
+    command: celery -A infrastructure.task_queue.celery_app worker -l info --concurrency=1 --max-tasks-per-child=50 --max-memory-per-child=150000
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
     env_file:
       - .env
     logging:
