@@ -3,10 +3,8 @@ services:
     image: docker.io/library/postgres:18-alpine
     container_name: hunt_db
     restart: always
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgrespassword
-      POSTGRES_DB: smarthunt_db
+    env_file:
+      - .env
     volumes:
       - db-data:/var/lib/postgresql/data
     logging:
@@ -32,7 +30,7 @@ services:
         limits:
           memory: 64M
   api:
-    image: ghcr.io/q-user/smart-hunt-api:latest
+    image: ghcr.io/q-user/smart-hunt:latest
     container_name: hunt_api
     restart: always
     command: uvicorn presentation.api.main:app --host 0.0.0.0 --port 8000
@@ -41,9 +39,8 @@ services:
     depends_on:
       - db
       - redis
-    environment:
-      - DATABASE_URL=postgresql+asyncpg://postgres:postgrespassword@db:5432/smarthunt_db
-      - REDIS_URL=redis://redis:6379/0
+    env_file:
+      - .env
     logging:
       driver: "json-file"
       options:
@@ -54,7 +51,7 @@ services:
         limits:
           memory: 300M
   celery_worker:
-    image: ghcr.io/q-user/smart-hunt-api:latest
+    image: ghcr.io/q-user/smart-hunt:latest
     container_name: hunt_worker
     restart: always
     command: celery -A infrastructure.task_queue.celery_app worker -l info --concurrency=1
