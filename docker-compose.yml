@@ -54,7 +54,7 @@ services:
     image: ghcr.io/q-user/smart-hunt:latest
     container_name: hunt_worker
     restart: always
-    command: celery -A infrastructure.task_queue.celery_app worker -l info --concurrency=1
+    command: celery -A src.infrastructure.task_queue.celery_app worker -l info --concurrency=1
     depends_on:
       - db
       - redis
