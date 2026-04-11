@@ -5,7 +5,7 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgrespassword
-      POSTGRES_DB: smarthunt_db
+      POSTGRES_DB: boilerplate_db
     # Пробрасываем порт 5432 наружу на ваш компьютер
     ports:
       - "5432:5432"

@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 
-app = FastAPI(title="Smart Hunt API")
+app = FastAPI(title="FastAPI Boilerplate")
 
 
 @app.get("/health")

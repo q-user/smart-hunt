@@ -1,5 +1,5 @@
 from collections.abc import Sequence
-from typing import Generic, TypeVar
+from typing import Any, Generic, TypeVar
 
 from pydantic import BaseModel
 from sqlalchemy import select
@@ -25,7 +25,7 @@ class BaseSqlAlchemyRepository(IBaseRepository[SchemaT], Generic[ModelT, SchemaT
         """Convert a SQLAlchemy model instance to a Pydantic schema."""
         return self.schema_class.model_validate(model)
 
-    async def get_by_id(self, entity_id: int) -> SchemaT | None:
+    async def get_by_id(self, entity_id: Any) -> SchemaT | None:
         result = await self._session.get(self.model_class, entity_id)
         if result is None:
             return None
@@ -44,7 +44,7 @@ class BaseSqlAlchemyRepository(IBaseRepository[SchemaT], Generic[ModelT, SchemaT
         await self._session.refresh(model)
         return self._to_schema(model)
 
-    async def delete(self, entity_id: int) -> bool:
+    async def delete(self, entity_id: Any) -> bool:
         result = await self._session.get(self.model_class, entity_id)
         if result is None:
             return False

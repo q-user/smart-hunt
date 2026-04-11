@@ -3,7 +3,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     # Pydantic автоматически сопоставит имена из .env (регистр не важен)
-    app_name: str = "SmartHunt"
+    app_name: str = "FastAPI Boilerplate"
     environment: str = "development"
     debug: bool = False
 

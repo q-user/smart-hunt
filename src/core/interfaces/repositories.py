@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
-from typing import Generic, TypeVar
+from typing import Any, Generic, TypeVar
 
 from pydantic import BaseModel
 
@@ -11,7 +11,7 @@ class IBaseRepository(ABC, Generic[T]):
     """Abstract base repository interface."""
 
     @abstractmethod
-    async def get_by_id(self, entity_id: int) -> T | None:
+    async def get_by_id(self, entity_id: Any) -> T | None:
         """Retrieve an entity by its unique identifier."""
         ...
 
@@ -26,6 +26,6 @@ class IBaseRepository(ABC, Generic[T]):
         ...
 
     @abstractmethod
-    async def delete(self, entity_id: int) -> bool:
+    async def delete(self, entity_id: Any) -> bool:
         """Delete an entity by its unique identifier."""
         ...
